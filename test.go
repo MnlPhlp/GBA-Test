@@ -45,7 +45,10 @@ func getGroundLevel(x int16) int16 {
 	if x < 50 {
 		return h - 100
 	}
-	return h - 70
+	if x > 80 && x < 130 {
+		return h - 70
+	}
+	return bottom
 }
 
 func drawFloor() {
@@ -105,6 +108,7 @@ func move() {
 	if newY > 11 {
 		if newY < bottom && y > groundLevel || newY < groundLevel {
 			y = newY
+			jumping = true
 		} else if y < groundLevel { // move to bottom
 			y = groundLevel
 		} else if y > groundLevel && y < bottom {
@@ -125,16 +129,13 @@ func move() {
 			ySpeed++
 		}
 	}
-	if frameCount < 10 {
-		frameCount++
-		return
-	}
-	frameCount = 0
-	if xSpeed > 0 {
-		xSpeed--
-	}
-	if xSpeed < 0 {
-		xSpeed++
+	if !jumping {
+		if xSpeed > 0 {
+			xSpeed--
+		}
+		if xSpeed < 0 {
+			xSpeed++
+		}
 	}
 }
 
