@@ -43,3 +43,11 @@ func SetVBlankInterrupt(f func()) {
 	i := interrupt.New(machine.IRQ_VBLANK, isr)
 	setupInterrupt(i, machine.IRQ_VBLANK, f)
 }
+
+func Finish() {
+	// disable interrupts
+	Register.IE.Set(0)
+	// keep running
+	for {
+	}
+}
