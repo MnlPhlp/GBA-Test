@@ -1,7 +1,7 @@
 package main
 
 import (
-	"GBA-Test/gbaLib"
+	"github.com/MnlPhlp/gbaLib"
 	"image/color"
 	"machine"
 
@@ -61,7 +61,7 @@ func drawFloor() {
 	}
 }
 
-func onKeyPress() {
+func CheckKeyPress() {
 	if gbaLib.Buttons.Right.IsPressed() {
 		xSpeed = 3
 	}
@@ -75,6 +75,7 @@ func onKeyPress() {
 }
 
 func update() {
+	CheckKeyPress()
 	tinydraw.Circle(
 		dsp,
 		oldX,
@@ -140,10 +141,9 @@ func move() {
 }
 
 func main() {
-	gbaLib.SetKeypadInterrupt(onKeyPress)
 	gbaLib.SetVBlankInterrupt(update)
 	for !gbaLib.Buttons.Start.IsPressed() {
 	}
 	tinyfont.WriteLine(dsp, &tinyfont.Picopixel, 20, h>>1, "Bye Bye !!", foreground)
-	gbaLib.Finish()
+	gbaLib.Stop()
 }
