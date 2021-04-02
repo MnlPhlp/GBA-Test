@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/MnlPhlp/gbaLib"
 	"image/color"
 	"machine"
 
+	"github.com/MnlPhlp/gbaLib/pkg/buttons"
+	"github.com/MnlPhlp/gbaLib/pkg/interrupts"
 	"tinygo.org/x/tinydraw"
 	"tinygo.org/x/tinyfont"
 )
@@ -12,8 +13,10 @@ import (
 const (
 	w      = 240
 	h      = 160
-	r      = 10
+	r      = 5
 	bottom = h - (r + 3)
+	xMax   = w - r
+	xMin   = r
 )
 
 var (
@@ -23,6 +26,7 @@ var (
 	foreground                   = color.RGBA{B: 255}
 	xSpeed, ySpeed               int16
 	jumping                      bool
+	floors                       = getFloors(0)
 )
 
 func init() {
@@ -33,64 +37,85 @@ func init() {
 	oldY = y
 	xSpeed = 0
 	ySpeed = 0
-	// draw background
-	tinydraw.FilledRectangle(dsp, 0, 0, w, h, background)
-	tinydraw.Line(dsp, 0, bottom+r+1, w, bottom+r+1, color.RGBA{})
+	drawBackground()
 }
 
-func getGroundLevel(x int16) int16 {
-	if x > 160 {
-		return h - 50
+func drawBackground() {
+	// draw background
+	tinydraw.FilledRectangle(dsp, 0, 0, w, h, background)
+	y1 := int16(bottom + r + 1)
+	y2 := int16(bottom + r + 2)
+	for xTmp := int16(0); xTmp < 240; xTmp++ {
+		dsp.SetPixel(xTmp, y1, color.RGBA{})
+		dsp.SetPixel(xTmp, y2, color.RGBA{})
 	}
-	if x < 50 {
-		return h - 100
+}
+
+func getFloors(x int16) [][]uint8 {
+	floors := make([][]uint8, 2)
+	floor := make([]uint8, 240)
+	for i := 0; i < 50; i++ {
+		floor[i] = h - 100
 	}
-	if x > 80 && x < 130 {
-		return h - 70
+	for i := 80; i < 130; i++ {
+		floor[i] = h - 70
 	}
-	return bottom
+	for i := 160; i < 240; i++ {
+		floor[i] = h - 50
+	}
+	floors[0] = floor
+	floors[1] = make([]uint8, 240)
+	for i := 50; i < 150; i++ {
+		floors[1][i] = 50
+	}
+	return floors
 }
 
 func drawFloor() {
 	// draw floor
-	for x := int16(0); x < w; x++ {
-		floor := getGroundLevel(x)
-		if floor < bottom {
-			dsp.SetPixel(x, floor+r+1, color.RGBA{})
+	for _, floor := range floors {
+		for x := int16(0); x < w; x++ {
+			if floor[x] == 0 {
+				continue
+			}
+			for i := int16(1); i <= 3; i++ {
+				dsp.SetPixel(x, int16(floor[x])+r+i, color.RGBA{})
+			}
 		}
 	}
 }
 
 func CheckKeyPress() {
-	if gbaLib.Buttons.Right.IsPressed() {
+	if buttons.Right.IsPressed() {
 		xSpeed = 3
 	}
-	if gbaLib.Buttons.Left.IsPressed() {
+	if buttons.Left.IsPressed() {
 		xSpeed = -3
 	}
-	if gbaLib.Buttons.A.IsPressed() && !jumping {
+	if buttons.A.IsPressed() && !jumping {
 		ySpeed = -12
 		jumping = true
 	}
 }
 
 func update() {
+	buttons.Poll()
 	CheckKeyPress()
-	tinydraw.Circle(
+	tinydraw.FilledCircle(
 		dsp,
 		oldX,
 		oldY,
-		10,
+		r,
 		background,
 	)
 	oldX = x
 	oldY = y
 	// draw new
-	tinydraw.Circle(
+	tinydraw.FilledCircle(
 		dsp,
 		x,
 		y,
-		10,
+		r,
 		foreground,
 	)
 	drawFloor()
@@ -101,36 +126,48 @@ func update() {
 func move() {
 	// update position
 	newX := x + xSpeed
-	if newX < w-11 && newX > 11 {
+	if newX < xMax && newX > xMin {
 		x = newX
 	}
-	groundLevel := getGroundLevel(x)
 	newY := y + ySpeed
-	if newY > 11 {
-		if newY < bottom && y > groundLevel || newY < groundLevel {
+	if newY > bottom {
+		jumping = false
+		ySpeed = 0
+		y = bottom
+	} else if newY > r {
+		landing := false
+		var floor int16
+		if ySpeed > 0 { // only check for floors when falling
+			for i := 0; i < len(floors); i++ {
+				if uint8(y) <= floors[i][x] && uint8(newY) >= floors[i][x] {
+					//if floor is in move fall to floor
+					landing = true
+					floor = int16(floors[i][x])
+					break
+				}
+			}
+
+		}
+		if landing {
+			ySpeed = 0
+			y = floor
+			jumping = false
+		} else {
 			y = newY
 			jumping = true
-		} else if y < groundLevel { // move to bottom
-			y = groundLevel
-		} else if y > groundLevel && y < bottom {
-			y = bottom
 		}
 	} else { // stop movement at top
 		ySpeed = 0
 	}
 	// update speed
-	if (y == groundLevel || y == bottom) && ySpeed > 0 {
-		ySpeed = 0
-		jumping = false
-	} else {
+	if jumping {
 		if ySpeed > 12 {
 			ySpeed--
 		}
 		if ySpeed < 12 {
 			ySpeed++
 		}
-	}
-	if !jumping {
+	} else {
 		if xSpeed > 0 {
 			xSpeed--
 		}
@@ -141,9 +178,9 @@ func move() {
 }
 
 func main() {
-	gbaLib.SetVBlankInterrupt(update)
-	for !gbaLib.Buttons.Start.IsPressed() {
+	interrupts.SetVBlankInterrupt(update)
+	for !buttons.Start.IsPressed() {
 	}
 	tinyfont.WriteLine(dsp, &tinyfont.Picopixel, 20, h>>1, "Bye Bye !!", foreground)
-	gbaLib.Stop()
+	interrupts.Stop()
 }
