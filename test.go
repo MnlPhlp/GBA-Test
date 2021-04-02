@@ -11,22 +11,29 @@ import (
 )
 
 const (
-	w      = 240
-	h      = 160
-	r      = 5
-	bottom = h - (r + 3)
-	xMax   = w - r
-	xMin   = r
+	w         = 240
+	h         = 160
+	wBG       = 300
+	hBG       = 160
+	xBgMax    = wBG - w
+	r         = 5
+	bottom    = h - (r + 3)
+	xMax      = w - r - 1
+	xMin      = r
+	moveRange = 50 + r
+	xMaxSpeed = 3
 )
 
 var (
 	x, y, oldX, oldY, frameCount int16
+	xBG, yBG, xBgOld             int16
 	dsp                          = machine.Display
 	background                   = color.RGBA{G: 125}
 	foreground                   = color.RGBA{B: 255}
+	floorColor                   = color.RGBA{}
 	xSpeed, ySpeed               int16
 	jumping                      bool
-	floors                       = getFloors(0)
+	floors                       = getFloors()
 )
 
 func init() {
@@ -51,9 +58,9 @@ func drawBackground() {
 	}
 }
 
-func getFloors(x int16) [][]uint8 {
+func getFloors() [][]uint8 {
 	floors := make([][]uint8, 2)
-	floor := make([]uint8, 240)
+	floor := make([]uint8, wBG)
 	for i := 0; i < 50; i++ {
 		floor[i] = h - 100
 	}
@@ -64,7 +71,7 @@ func getFloors(x int16) [][]uint8 {
 		floor[i] = h - 50
 	}
 	floors[0] = floor
-	floors[1] = make([]uint8, 240)
+	floors[1] = make([]uint8, wBG)
 	for i := 50; i < 150; i++ {
 		floors[1][i] = 50
 	}
@@ -72,25 +79,32 @@ func getFloors(x int16) [][]uint8 {
 }
 
 func drawFloor() {
-	// draw floor
+	// delete old Floor
 	for _, floor := range floors {
 		for x := int16(0); x < w; x++ {
-			if floor[x] == 0 {
-				continue
-			}
+			y := floor[x+xBG]
+			yOld := floor[x+xBgOld]
+			keep := y == yOld || yOld == 0
 			for i := int16(1); i <= 3; i++ {
-				dsp.SetPixel(x, int16(floor[x])+r+i, color.RGBA{})
+				if !keep {
+					// delete old Floor
+					dsp.SetPixel(x, int16(yOld)+r+i, background)
+				}
+				if y != 0 {
+					dsp.SetPixel(x, int16(y)+r+i, floorColor)
+				}
 			}
 		}
 	}
+	xBgOld = xBG
 }
 
 func CheckKeyPress() {
 	if buttons.Right.IsPressed() {
-		xSpeed = 3
+		xSpeed = xMaxSpeed
 	}
 	if buttons.Left.IsPressed() {
-		xSpeed = -3
+		xSpeed = -xMaxSpeed
 	}
 	if buttons.A.IsPressed() && !jumping {
 		ySpeed = -12
@@ -101,7 +115,7 @@ func CheckKeyPress() {
 func update() {
 	buttons.Poll()
 	CheckKeyPress()
-	tinydraw.FilledCircle(
+	tinydraw.Circle(
 		dsp,
 		oldX,
 		oldY,
@@ -111,7 +125,7 @@ func update() {
 	oldX = x
 	oldY = y
 	// draw new
-	tinydraw.FilledCircle(
+	tinydraw.Circle(
 		dsp,
 		x,
 		y,
@@ -126,7 +140,28 @@ func update() {
 func move() {
 	// update position
 	newX := x + xSpeed
-	if newX < xMax && newX > xMin {
+	// update screen pos
+	if x < moveRange && xBG > 0 {
+		xBG -= xMaxSpeed
+		newX += xMaxSpeed
+		if xBG < 0 {
+			newX += xBG
+			xBG = 0
+		}
+	}
+	if x > w-moveRange && xBG < xBgMax {
+		xBG += xMaxSpeed
+		newX -= xMaxSpeed
+		if xBG > xBgMax {
+			newX += xBG - xBgMax
+			xBG = xBgMax
+		}
+	}
+	if newX < xMin {
+		x = xMin
+	} else if newX > xMax {
+		x = xMax
+	} else {
 		x = newX
 	}
 	newY := y + ySpeed
@@ -139,10 +174,11 @@ func move() {
 		var floor int16
 		if ySpeed > 0 { // only check for floors when falling
 			for i := 0; i < len(floors); i++ {
-				if uint8(y) <= floors[i][x] && uint8(newY) >= floors[i][x] {
+				xFloor := x + xBG
+				if uint8(y) <= floors[i][xFloor] && uint8(newY) >= floors[i][xFloor] {
 					//if floor is in move fall to floor
 					landing = true
-					floor = int16(floors[i][x])
+					floor = int16(floors[i][xFloor])
 					break
 				}
 			}
