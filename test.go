@@ -106,9 +106,13 @@ func CheckKeyPress() {
 	if buttons.Left.IsPressed() {
 		xSpeed = -xMaxSpeed
 	}
-	if buttons.A.IsPressed() && !jumping {
-		ySpeed = -12
-		jumping = true
+	if !jumping {
+		if buttons.A.IsPressed() {
+			ySpeed = -12
+			jumping = true
+		} else if buttons.B.IsPressed() && y < bottom {
+			y++ // drop trough the floor
+		}
 	}
 }
 
