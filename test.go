@@ -2,12 +2,10 @@ package main
 
 import (
 	"image/color"
-	"machine"
 
 	"github.com/MnlPhlp/gbaLib/pkg/buttons"
+	"github.com/MnlPhlp/gbaLib/pkg/gbaDraw"
 	"github.com/MnlPhlp/gbaLib/pkg/interrupts"
-	"tinygo.org/x/tinydraw"
-	"tinygo.org/x/tinyfont"
 )
 
 const (
@@ -27,17 +25,16 @@ const (
 var (
 	x, y, oldX, oldY, frameCount int16
 	xBG, yBG, xBgOld             int16
-	dsp                          = machine.Display
-	background                   = color.RGBA{G: 125}
-	foreground                   = color.RGBA{B: 255}
-	floorColor                   = color.RGBA{}
+	dsp                          = gbaDraw.Display
+	background                   = gbaDraw.ToRgba15(color.RGBA{G: 125})
+	foreground                   = gbaDraw.ToRgba15(color.RGBA{G: 125})
+	floorColor                   = uint16(0)
 	xSpeed, ySpeed               int16
 	jumping                      bool
 	floors                       = getFloors()
 )
 
 func init() {
-	dsp.Configure()
 	x = w / 2
 	y = h / 2
 	oldX = x
@@ -49,12 +46,12 @@ func init() {
 
 func drawBackground() {
 	// draw background
-	tinydraw.FilledRectangle(dsp, 0, 0, w, h, background)
+	gbaDraw.Filled2PointRect(0, 0, w, h, background)
 	y1 := int16(bottom + r + 1)
 	y2 := int16(bottom + r + 2)
 	for xTmp := int16(0); xTmp < 240; xTmp++ {
-		dsp.SetPixel(xTmp, y1, color.RGBA{})
-		dsp.SetPixel(xTmp, y2, color.RGBA{})
+		dsp.SetPixel(xTmp, y1, 0)
+		dsp.SetPixel(xTmp, y2, 0)
 	}
 }
 
@@ -116,29 +113,20 @@ func CheckKeyPress() {
 	}
 }
 
+func drawFigure(xOld, yOld, x, y int16) {
+	gbaDraw.Filled2PointRect(x-r, y-r, x+r, y+r, foreground)
+}
+
 func update() {
 	buttons.Poll()
 	CheckKeyPress()
-	tinydraw.Circle(
-		dsp,
-		oldX,
-		oldY,
-		r,
-		background,
-	)
+	move()
+	dsp.Blank()
+	drawFigure(oldX, oldY, x, y)
 	oldX = x
 	oldY = y
-	// draw new
-	tinydraw.Circle(
-		dsp,
-		x,
-		y,
-		r,
-		foreground,
-	)
 	drawFloor()
 	dsp.Display()
-	move()
 }
 
 func move() {
@@ -218,9 +206,9 @@ func move() {
 }
 
 func main() {
+	dsp.Configure()
 	interrupts.SetVBlankInterrupt(update)
 	for !buttons.Start.IsPressed() {
 	}
-	tinyfont.WriteLine(dsp, &tinyfont.Picopixel, 20, h>>1, "Bye Bye !!", foreground)
 	interrupts.Stop()
 }
