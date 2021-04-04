@@ -8,6 +8,7 @@ import (
 
 	"github.com/MnlPhlp/gbaLib/pkg/buttons"
 	"github.com/MnlPhlp/gbaLib/pkg/interrupts"
+	"github.com/MnlPhlp/gbaLib/pkg/registers"
 )
 
 func init() {
@@ -21,10 +22,13 @@ func init() {
 func main() {
 	drawing.Configure()
 	interrupts.SetVBlankInterrupt(update)
+	registers.Timer.Tm0Cnt.Set(1 << 7)
 	for !buttons.Start.IsPressed() {
 	}
 	interrupts.Stop()
 }
+
+var framecount = 0
 
 func update() {
 	logic.Move()

@@ -14,13 +14,18 @@ const (
 )
 
 var (
-	xBgOld = state.XBg
-	xOld   = state.X
-	yOld   = state.Y
+	xBgOld  = state.XBg
+	xOld    = state.X
+	yOld    = state.Y
+	xBgOld2 = state.XBg
+	xOld2   = state.X
+	yOld2   = state.Y
 )
 
 func Configure() {
 	gbaDraw.Display.Configure()
+	drawBackground()
+	gbaDraw.Display.Display()
 	drawBackground()
 }
 
@@ -37,10 +42,8 @@ func drawBackground() {
 
 func drawFigure(x, y, xOld, yOld int16) {
 	const r = constants.R
-	//tinydraw.FilledCircle(machine.Display, xOld, yOld, constants.R, color.RGBA{G: 255})
-	//tinydraw.FilledCircle(machine.Display, x, y, constants.R, color.RGBA{B: 255})
-	gbaDraw.Display.Filled2PointRect(xOld-r, yOld-r, xOld+r, yOld+r, background)
-	gbaDraw.Display.Filled2PointRect(x-r, y-r, x+r, y+r, foreground)
+	gbaDraw.Display.FilledCircle(xOld, yOld, constants.R, background)
+	gbaDraw.Display.FilledCircle(x, y, constants.R, foreground)
 }
 
 func drawFloor() {
@@ -66,7 +69,11 @@ func drawFloor() {
 func Update() {
 	drawFigure(state.X, state.Y, xOld, yOld)
 	drawFloor()
-	xOld = state.X
-	yOld = state.Y
-	xBgOld = state.XBg
+	xOld = xOld2
+	yOld = yOld2
+	xBgOld = xBgOld2
+	xOld2 = state.X
+	yOld2 = state.Y
+	xBgOld2 = state.XBg
+	gbaDraw.Display.Display()
 }
