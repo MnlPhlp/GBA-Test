@@ -38,11 +38,6 @@ func drawBackground() {
 		gbaDraw.Display.SetPixel(xTmp, y1, floorColor)
 		gbaDraw.Display.SetPixel(xTmp, y2, floorColor)
 	}
-	//Debug
-	gbaDraw.Display.HLine(0, 10, 5, gbaDraw.Red)
-	gbaDraw.Display.HLine(1, 11, 6, gbaDraw.Blue)
-	gbaDraw.Display.HLine(228, 238, 3, gbaDraw.Red)
-	gbaDraw.Display.HLine(229, 239, 4, gbaDraw.Blue)
 }
 
 func drawFigure(x, y, xOld, yOld int16) {
