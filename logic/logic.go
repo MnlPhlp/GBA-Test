@@ -12,26 +12,6 @@ var (
 	jumping        bool
 )
 
-func GetFloors() [][]int16 {
-	floors := make([][]int16, 2)
-	floor := make([]int16, constants.WBg)
-	for i := 0; i < 50; i++ {
-		floor[i] = constants.H - 100
-	}
-	for i := 80; i < 130; i++ {
-		floor[i] = constants.H - 70
-	}
-	for i := 160; i < 240; i++ {
-		floor[i] = constants.H - 50
-	}
-	floors[0] = floor
-	floors[1] = make([]int16, constants.WBg)
-	for i := 50; i < 150; i++ {
-		floors[1][i] = 50
-	}
-	return floors
-}
-
 func CheckKeyPress() {
 	if buttons.Right.IsPressed() {
 		xSpeed = constants.XMaxSpeed
@@ -103,22 +83,24 @@ func updateYPos() {
 		state.Y = constants.Bottom
 	} else if newY > constants.R {
 		landing := false
-		var floor int16
+		var floorHeight int16
 		if ySpeed > 0 { // only check for state.Floors when falling
-			for i := 0; i < len(state.Floors); i++ {
-				xFloor := state.X + state.XBg
-				if state.Y <= state.Floors[i][xFloor] && newY >= state.Floors[i][xFloor] {
+			x := state.X + state.XBg
+			for _, floor := range state.Floors {
+				if floor.X2 < x || floor.X1 > x {
+					continue
+				}
+				if state.Y <= floor.Y && newY >= floor.Y {
 					//if floor is in move fall to floor
 					landing = true
-					floor = int16(state.Floors[i][xFloor])
+					floorHeight = floor.Y
 					break
 				}
 			}
-
 		}
 		if landing {
 			ySpeed = 0
-			state.Y = floor
+			state.Y = floorHeight
 			jumping = false
 		} else {
 			state.Y = newY

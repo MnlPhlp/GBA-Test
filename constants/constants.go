@@ -3,7 +3,7 @@ package constants
 const (
 	W         = 240
 	H         = 160
-	WBg       = 300
+	WBg       = 3000
 	HBg       = 160
 	XBgMax    = WBg - W
 	R         = 5

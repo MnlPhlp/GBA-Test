@@ -3,6 +3,7 @@ package main
 import (
 	"GBA-Test/constants"
 	"GBA-Test/drawing"
+	"GBA-Test/floors"
 	"GBA-Test/logic"
 	"GBA-Test/state"
 
@@ -14,9 +15,10 @@ import (
 func init() {
 	state.X = constants.W / 2
 	state.Y = constants.H / 2
+	state.XBg = 200
 	state.XSpeed = 0
 	state.YSpeed = 0
-	state.Floors = logic.GetFloors()
+	state.Floors = floors.Floors
 }
 
 func main() {
