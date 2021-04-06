@@ -1,3 +1,4 @@
 *.gba
 test
 *.sav
+.vscode
