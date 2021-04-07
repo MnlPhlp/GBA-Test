@@ -1,7 +1,6 @@
 package floors
 
 import (
-	"GBA-Test/constants"
 	"fmt"
 )
 
@@ -42,14 +41,14 @@ func (floors FloorList) AddFloor(f Floor) FloorList {
 	if f.X1 < 0 {
 		panic(fmt.Errorf("invalid x1 Value. Must be bigger than 0"))
 	}
-	if f.X2 > constants.WBg {
-		panic(fmt.Errorf("invalid x2 Value. Must be smaller than %v", constants.WBg))
+	if f.X2 > WBg {
+		panic(fmt.Errorf("invalid x2 Value. Must be smaller than %v", WBg))
 	}
 	if f.Y < 0 {
 		panic(fmt.Errorf("invalid y Value. Must be bigger than 0"))
 	}
-	if f.Y > constants.HBg {
-		panic(fmt.Errorf("invalid y Value. Must be smaller than %v", constants.HBg))
+	if f.Y > HBg {
+		panic(fmt.Errorf("invalid y Value. Must be smaller than %v", HBg))
 	}
 	return append(floors, f)
 }

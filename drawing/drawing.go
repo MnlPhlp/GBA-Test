@@ -14,12 +14,7 @@ const (
 )
 
 var (
-	xBgOld  = state.XBg
-	xOld    = state.X
-	yOld    = state.Y
-	xBgOld2 = state.XBg
-	xOld2   = state.X
-	yOld2   = state.Y
+	xBgOld, xOld, yOld, yBgOld, xBgOld2, xOld2, yOld2, yBgOld2 int16
 )
 
 func Configure() {
@@ -27,6 +22,14 @@ func Configure() {
 	drawBackground()
 	gbaDraw.Display.Display()
 	drawBackground()
+	xBgOld = state.XBg
+	yBgOld = state.YBg
+	xOld = state.X
+	yOld = state.Y
+	xBgOld2 = state.XBg
+	yBgOld2 = state.YBg
+	xOld2 = state.X
+	yOld2 = state.Y
 }
 
 func drawBackground() {
@@ -35,14 +38,9 @@ func drawBackground() {
 	y1 := int16(constants.Bottom + constants.R + 1)
 	y2 := int16(constants.Bottom + constants.R + 2)
 	for xTmp := int16(0); xTmp < 240; xTmp++ {
-		gbaDraw.Display.SetPixel(xTmp, y1, floorColor)
-		gbaDraw.Display.SetPixel(xTmp, y2, floorColor)
+		gbaDraw.Display.SetPixelPallette(xTmp, y1, floorColor)
+		gbaDraw.Display.SetPixelPallette(xTmp, y2, floorColor)
 	}
-	//Debug
-	gbaDraw.Display.HLine(0, 10, 5, gbaDraw.Red)
-	gbaDraw.Display.HLine(1, 11, 6, gbaDraw.Blue)
-	gbaDraw.Display.HLine(228, 238, 3, gbaDraw.Red)
-	gbaDraw.Display.HLine(229, 239, 4, gbaDraw.Blue)
 }
 
 func drawFigure(x, y, xOld, yOld int16) {
@@ -58,17 +56,22 @@ func drawFloor() {
 		x2 = floor.X2 - state.XBg
 		x1Old = floor.X1 - xBgOld
 		x2Old = floor.X2 - xBgOld
-		y = floor.Y + constants.R + 1
+		y = floor.Y + constants.R + 1 - state.YBg
+		yOld = floor.Y + constants.R + 1 - yBgOld
 		// remove old lines
-		if !(x2Old < 0 || x1Old > constants.W) {
-			if x1Old < x1 {
-				drawFloorLine(x1Old, x1, y, background)
-			}
-			if x2Old > x2 {
-				drawFloorLine(x2, x2Old, y, background)
+		if !(x2Old < 0 || x1Old > constants.W || yOld < 0 || yOld > constants.H) {
+			if yOld != y {
+				drawFloorLine(x1Old, x2Old, yOld, background)
+			} else {
+				if x1Old < x1 {
+					drawFloorLine(x1Old, x1, y, background)
+				}
+				if x2Old > x2 {
+					drawFloorLine(x2, x2Old, y, background)
+				}
 			}
 		}
-		if x2 < 0 || x1 > constants.W {
+		if x2 < 0 || x1 > constants.W || y < 0 || y > constants.H {
 			continue
 		}
 		drawFloorLine(x1, x2, y, floorColor)
@@ -94,8 +97,9 @@ func Update() {
 	xOld = xOld2
 	yOld = yOld2
 	xBgOld = xBgOld2
+	yBgOld = yBgOld2
 	xOld2 = state.X
 	yOld2 = state.Y
 	xBgOld2 = state.XBg
-	gbaDraw.Display.Display()
+	yBgOld2 = state.YBg
 }

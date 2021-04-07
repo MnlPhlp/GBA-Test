@@ -16,7 +16,7 @@ import (
 func getRandomLevel() floors.FloorList {
 	floorList := floors.NewFloors()
 	for i := 0; i < 10; i++ {
-		x1 := rand.Intn(constants.WBg)
+		x1 := rand.Intn(int(floors.WBg))
 		floorList = floorList.AddFloor(
 			floors.Floor{
 				X1: int16(x1),

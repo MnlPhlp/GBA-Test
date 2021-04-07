@@ -2,6 +2,7 @@ package logic
 
 import (
 	"GBA-Test/constants"
+	"GBA-Test/floors"
 	"GBA-Test/state"
 
 	"github.com/MnlPhlp/gbaLib/pkg/buttons"
@@ -21,7 +22,7 @@ func CheckKeyPress() {
 	}
 	if !jumping {
 		if buttons.A.IsPressed() {
-			ySpeed = -12
+			ySpeed = -constants.YMaxSpeed
 			jumping = true
 		} else if buttons.B.IsPressed() && state.Y < constants.Bottom {
 			state.Y++ // drop trough the floor
@@ -29,25 +30,31 @@ func CheckKeyPress() {
 	}
 }
 
+func updateBgPos(pos, bgPos, move, size, bgSize int16) (int16, int16) {
+	// update screen pos
+	if pos < constants.MoveRange && bgPos > 0 {
+		bgPos -= move
+		pos += move
+		if bgPos < 0 {
+			pos += bgPos
+			bgPos = 0
+		}
+	} else if pos > size-constants.MoveRange && bgPos < bgSize-size {
+		bgPos += move
+		pos -= move
+		if bgPos > bgSize {
+			pos += bgPos - bgSize
+			bgPos = bgSize
+		}
+	}
+	return pos, bgPos
+}
+
 func updateXPos() {
 	newX := state.X + xSpeed
 	// update screen pos
-	if state.X < constants.MoveRange && state.XBg > 0 {
-		state.XBg -= constants.XMaxSpeed
-		newX += constants.XMaxSpeed
-		if state.XBg < 0 {
-			newX += state.XBg
-			state.XBg = 0
-		}
-	}
-	if state.X > constants.W-constants.MoveRange && state.XBg < constants.XBgMax {
-		state.XBg += constants.XMaxSpeed
-		newX -= constants.XMaxSpeed
-		if state.XBg > constants.WBg {
-			newX += state.XBg - constants.WBg
-			state.XBg = constants.WBg
-		}
-	}
+	newX, state.XBg = updateBgPos(newX, state.XBg, constants.XMaxSpeed, constants.W, floors.WBg)
+	// update figure pos
 	if newX < constants.XMin {
 		state.X = constants.XMin
 	} else if newX > constants.XMax {
@@ -66,6 +73,7 @@ func updateSpeeds() {
 			ySpeed++
 		}
 	} else {
+		ySpeed = 0
 		if xSpeed > 0 {
 			xSpeed--
 		}
@@ -81,19 +89,22 @@ func updateYPos() {
 		jumping = false
 		ySpeed = 0
 		state.Y = constants.Bottom
-	} else if newY > constants.R {
+	} else if newY < constants.R && state.YBg == 0 {
+		// stop movement at top
+		state.Y = constants.R
+		ySpeed = 0
+	} else {
 		landing := false
 		var floorHeight int16
-		if ySpeed > 0 { // only check for state.Floors when falling
+		if ySpeed > 0 { // only check for floors when falling
 			x := state.X + state.XBg
 			for _, floor := range state.Floors {
-				if floor.X2 < x || floor.X1 > x {
+				floorHeight = floor.Y - state.YBg
+				if floor.X2 < x || floor.X1 > x || floorHeight < state.Y || floorHeight > newY {
 					continue
-				}
-				if state.Y <= floor.Y && newY >= floor.Y {
+				} else {
 					//if floor is in move fall to floor
 					landing = true
-					floorHeight = floor.Y
 					break
 				}
 			}
@@ -106,8 +117,14 @@ func updateYPos() {
 			state.Y = newY
 			jumping = true
 		}
-	} else { // stop movement at top
-		ySpeed = 0
+		// update screen pos
+		move := int16(5)
+		if ySpeed > 0 {
+			move = ySpeed
+		} else if ySpeed < 0 {
+			move = -ySpeed
+		}
+		state.Y, state.YBg = updateBgPos(state.Y, state.YBg, move, constants.H, floors.HBg)
 	}
 }
 
