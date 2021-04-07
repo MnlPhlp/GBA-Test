@@ -3,6 +3,7 @@ package logic
 import (
 	"GBA-Test/constants"
 	"GBA-Test/floors"
+	"GBA-Test/sound"
 	"GBA-Test/state"
 
 	"github.com/MnlPhlp/gbaLib/pkg/buttons"
@@ -24,6 +25,7 @@ func CheckKeyPress() {
 		if buttons.A.IsPressed() {
 			ySpeed = -constants.YMaxSpeed
 			jumping = true
+			sound.Jump()
 		} else if buttons.B.IsPressed() && state.Y < constants.Bottom {
 			state.Y++ // drop trough the floor
 		}
@@ -128,7 +130,7 @@ func updateYPos() {
 	}
 }
 
-func Move() {
+func Move() (gameOver bool) {
 	buttons.Poll()
 	CheckKeyPress()
 	// update position
@@ -136,4 +138,5 @@ func Move() {
 	updateYPos()
 	// update speed
 	updateSpeeds()
+	return state.Y >= constants.Bottom
 }

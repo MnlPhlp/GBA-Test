@@ -59,7 +59,7 @@ func drawFloor() {
 		y = floor.Y + constants.R + 1 - state.YBg
 		yOld = floor.Y + constants.R + 1 - yBgOld
 		// remove old lines
-		if !(x2Old < 0 || x1Old > constants.W || yOld < 0 || yOld > constants.H) {
+		if !(x2Old < 0 || x1Old > constants.W || yOld < 0 || yOld > constants.H-5) {
 			if yOld != y {
 				drawFloorLine(x1Old, x2Old, yOld, background)
 			} else {
@@ -71,7 +71,7 @@ func drawFloor() {
 				}
 			}
 		}
-		if x2 < 0 || x1 > constants.W || y < 0 || y > constants.H {
+		if x2 < 0 || x1 > constants.W || y < 0 || y > constants.H-5 {
 			continue
 		}
 		drawFloorLine(x1, x2, y, floorColor)
