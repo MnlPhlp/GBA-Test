@@ -1,5 +1,5 @@
 tinygo build -target gameboy-advance -o tmp test.go
-cp tmp MnlPhlp_emu.gba
-arm-none-eabi-objcopy -O binary tmp MnlPhlp.gba
+cp tmp game_emu.gba
+arm-none-eabi-objcopy -O binary tmp game.gba
 rm tmp
-gbafix MnlPhlp.gba -tMnlPhlp
+gbafix game.gba -tgame
